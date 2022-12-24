@@ -114,11 +114,12 @@ class _PaginateFirestoreState extends State<PaginateFirestore> {
           if (widget.onLoaded != null) {
             widget.onLoaded!(loadedState);
           }
-          if (loadedState.hasReachedEnd && widget.onReachedEnd != null) {
+          if (loadedState.allQueriesHaveReachedEnd() &&
+              widget.onReachedEnd != null) {
             widget.onReachedEnd!(loadedState);
           }
 
-          if (loadedState.documentSnapshots.isEmpty) {
+          if (loadedState.getAllDocs().isEmpty) {
             return _buildWithScrollView(context, widget.onEmpty);
           }
           return widget.itemBuilderType == PaginateBuilderType.listView
@@ -185,19 +186,19 @@ class _PaginateFirestoreState extends State<PaginateFirestore> {
             gridDelegate: widget.gridDelegate,
             delegate: SliverChildBuilderDelegate(
               (context, index) {
-                if (index >= loadedState.documentSnapshots.length) {
+                if (index >= loadedState.getAllDocs().length) {
                   _cubit!.fetchPaginatedList();
                   return widget.bottomLoader;
                 }
                 return widget.itemBuilder(
                   context,
-                  loadedState.documentSnapshots,
+                  loadedState.getAllDocs(),
                   index,
                 );
               },
-              childCount: loadedState.hasReachedEnd
-                  ? loadedState.documentSnapshots.length
-                  : loadedState.documentSnapshots.length + 1,
+              childCount: loadedState.allQueriesHaveReachedEnd()
+                  ? loadedState.getAllDocs().length
+                  : loadedState.getAllDocs().length + 1,
             ),
           ),
         ),
@@ -236,13 +237,13 @@ class _PaginateFirestoreState extends State<PaginateFirestore> {
               (context, index) {
                 final itemIndex = index ~/ 2;
                 if (index.isEven) {
-                  if (itemIndex >= loadedState.documentSnapshots.length) {
+                  if (itemIndex >= loadedState.getAllDocs().length) {
                     _cubit!.fetchPaginatedList();
                     return widget.bottomLoader;
                   }
                   return widget.itemBuilder(
                     context,
-                    loadedState.documentSnapshots,
+                    loadedState.getAllDocs(),
                     itemIndex,
                   );
                 }
@@ -257,9 +258,9 @@ class _PaginateFirestoreState extends State<PaginateFirestore> {
               },
               childCount: max(
                   0,
-                  (loadedState.hasReachedEnd
-                              ? loadedState.documentSnapshots.length
-                              : loadedState.documentSnapshots.length + 1) *
+                  (loadedState.allQueriesHaveReachedEnd()
+                              ? loadedState.getAllDocs().length
+                              : loadedState.getAllDocs().length + 1) *
                           2 -
                       1),
             ),
@@ -295,19 +296,19 @@ class _PaginateFirestoreState extends State<PaginateFirestore> {
         onPageChanged: widget.onPageChanged,
         childrenDelegate: SliverChildBuilderDelegate(
           (context, index) {
-            if (index >= loadedState.documentSnapshots.length) {
+            if (index >= loadedState.getAllDocs().length) {
               _cubit!.fetchPaginatedList();
               return widget.bottomLoader;
             }
             return widget.itemBuilder(
               context,
-              loadedState.documentSnapshots,
+              loadedState.getAllDocs(),
               index,
             );
           },
-          childCount: loadedState.hasReachedEnd
-              ? loadedState.documentSnapshots.length
-              : loadedState.documentSnapshots.length + 1,
+          childCount: loadedState.allQueriesHaveReachedEnd()
+              ? loadedState.getAllDocs().length
+              : loadedState.getAllDocs().length + 1,
         ),
       ),
     );

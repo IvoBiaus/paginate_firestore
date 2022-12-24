@@ -22,20 +22,33 @@ class PaginationError extends PaginationState {
 
 class PaginationLoaded extends PaginationState {
   PaginationLoaded({
-    required this.documentSnapshots,
-    required this.hasReachedEnd,
+    required this.documentSnapshotsByQuery,
+    required this.hasReachedEndByQuery,
   });
 
-  final bool hasReachedEnd;
-  final List<DocumentSnapshot> documentSnapshots;
+  final Map<Query, bool> hasReachedEndByQuery;
+  final Map<Query, List<DocumentSnapshot>> documentSnapshotsByQuery;
+
+  List<DocumentSnapshot> getAllDocs() {
+    return documentSnapshotsByQuery.values.fold<List<DocumentSnapshot>>([],
+        (allDocs, currentList) {
+      allDocs.addAll(currentList);
+      return allDocs;
+    });
+  }
+
+  bool allQueriesHaveReachedEnd() {
+    return hasReachedEndByQuery.values.every((hasReachedEnd) => hasReachedEnd);
+  }
 
   PaginationLoaded copyWith({
-    bool? hasReachedEnd,
-    List<DocumentSnapshot>? documentSnapshots,
+    Map<Query, bool>? hasReachedEndByQuery,
+    Map<Query, List<DocumentSnapshot>>? documentSnapshotsByQuery,
   }) {
     return PaginationLoaded(
-      hasReachedEnd: hasReachedEnd ?? this.hasReachedEnd,
-      documentSnapshots: documentSnapshots ?? this.documentSnapshots,
+      hasReachedEndByQuery: hasReachedEndByQuery ?? this.hasReachedEndByQuery,
+      documentSnapshotsByQuery:
+          documentSnapshotsByQuery ?? this.documentSnapshotsByQuery,
     );
   }
 
@@ -43,11 +56,26 @@ class PaginationLoaded extends PaginationState {
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
 
-    return other is PaginationLoaded &&
-        other.hasReachedEnd == hasReachedEnd &&
-        listEquals(other.documentSnapshots, documentSnapshots);
+    if (other is PaginationLoaded) {
+      // To be equal every "query & snapshot" pair must match
+      bool everyQuerySnapshotMatches =
+          other.documentSnapshotsByQuery.entries.every((querySnap) {
+        return listEquals(
+            querySnap.value, documentSnapshotsByQuery[querySnap.key]);
+      });
+
+      // To be equal every "query & end" pair must match
+      bool everyQueryEndMatches =
+          other.hasReachedEndByQuery.entries.every((queryEnd) {
+        return queryEnd.value == hasReachedEndByQuery[queryEnd.key];
+      });
+
+      return everyQueryEndMatches && everyQuerySnapshotMatches;
+    }
+    return false;
   }
 
   @override
-  int get hashCode => hasReachedEnd.hashCode ^ documentSnapshots.hashCode;
+  int get hashCode =>
+      hasReachedEndByQuery.hashCode ^ documentSnapshotsByQuery.hashCode;
 }
